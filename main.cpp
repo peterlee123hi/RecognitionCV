@@ -18,6 +18,8 @@ Scalar blue(255, 0, 0);
 Scalar green(0, 255, 0);
 Scalar red(0, 0, 255);
 
+VideoWriter out;
+
 void drawCircle(Mat m, Point center, Scalar color) {
     int radius = 6;
     circle(m, center, radius, color, 2);
@@ -60,6 +62,7 @@ void calibrate(VideoCapture& camera) {
             drawPOI(cameraFeed, POI[i], blue);
         }
 
+        out << cameraFeed;
         imshow("Camera", cameraFeed);
         if (waitKey(30) == char(' '))
             break;
@@ -108,6 +111,8 @@ void average(VideoCapture& camera) {
         }
         cvtColor(cameraFeed, cameraFeed, CV_HLS2BGR);
         drawTitle(cameraFeed, "Calculating average color...");
+
+        out << cameraFeed;
         imshow("Camera", cameraFeed);
         if (waitKey(30) >= 0)
             break;
@@ -187,6 +192,8 @@ void display(Mat& cameraFeed, Mat& binary) {
     }
     merge(channels, result);
     result.copyTo(cameraFeed(r));
+
+    out << cameraFeed;
     imshow("Camera", cameraFeed);
 }
 
@@ -246,7 +253,7 @@ bool isPenDown(vector<Point> contour) {
             return false;
         }
     }
-    
+
     return top != Point(0, 0);
 }
 
@@ -267,6 +274,10 @@ int main() {
     if (!camera.isOpened()) {
         cout << "Cannot open camera.";
     }
+
+    Mat frame;
+    camera >> frame;
+    out.open("demoTest.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
 
     calibrate(camera);
     average(camera);
@@ -307,7 +318,7 @@ int main() {
             Point a = drawnLines[i];
             Point b = drawnLines[i + 1];
             if (a != Point(0, 0) && b != Point(0, 0)) {
-                line(cameraFeed, a, b, blue, 2);
+                line(cameraFeed, a, b, red, 2);
             }
         }
 
@@ -316,6 +327,7 @@ int main() {
             break;
     }
 
+    out.release();
     camera.release();
     destroyAllWindows();
     return 0;
