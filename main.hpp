@@ -15,6 +15,6 @@
 
 // RecognitionCV Libraries
 #include "handtracking.cpp"
-#include "faceRecognition.cpp"
+#include "facerecognition.cpp"
 
 #endif

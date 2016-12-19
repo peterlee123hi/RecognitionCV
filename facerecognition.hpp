@@ -15,7 +15,7 @@
 using namespace std;
 using namespace cv;
 
-class faceRecognition {
+class facerecognition {
 public:
 
 private:
