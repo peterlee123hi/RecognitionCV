@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project(RecognitionCV)
+find_package(OpenCV REQUIRED)
+add_executable(RecognitionCV main.cpp)
+target_link_libraries(RecognitionCV ${OpenCV_LIBS})
