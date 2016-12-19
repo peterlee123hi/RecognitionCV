@@ -17,16 +17,17 @@ using namespace cv;
 
 class handtracking {
 public:
-    int numberOfFingers(vector<Point> contour);
-    bool isHand(vector<Point> contour);
-    Point getCentroid(vector<Point> contour);
-    vector<Point> getDefects(vector<Point> contour, int minDist);
-    vector<Point> getFingertips(vector<Point> contour);
+    static int numberOfFingers(vector<Point> contour);
+    static bool isHand(vector<Point> contour);
+    static Point getCentroid(vector<Point> contour);
+    static vector<Point> getDefects(vector<Point> contour, int minDist);
+    static vector<Point> getFingertips(vector<Point> contour);
+    static vector<Point> getApproxConvexHull(vector<Point> contour);
 
 private:
-    vector<Point> getApproxConvexHull(vector<Point> contour);
-    vector<Point> cluster(vector<Point> contour, int minDist); 
-    float distance(Point a, Point b);
+    static vector<Point> cluster(vector<Point> contour, int minDist); 
+    static Point median(vector<Point> points);
+    static double distance(Point a, Point b);
 };
 
 #endif

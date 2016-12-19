@@ -13,6 +13,12 @@ int averageBGR[3];
 
 vector<Point> POI;
 
+void drawCircle(Mat m, Point center) {
+    Scalar color(255, 0, 0);
+    int radius = 6;
+    circle(m, center, radius, color, 2);
+}
+
 void drawPOI(Mat m, Point center) {
     Scalar color(0, 255, 0);
     rectangle(m, Point(center.x - SIDE / 2, center.y - SIDE / 2), Point(center.x + SIDE / 2, center.y + SIDE / 2), color, 2);
@@ -234,7 +240,11 @@ int main() {
         cvtColor(filtered, filtered, CV_BGR2HLS);
         generateBinary(filtered, binary, binaryList);
         cvtColor(filtered, filtered, CV_HLS2BGR);
-        drawContour(cameraFeed, isolateContour(binary));
+
+        vector<Point> handContour = isolateContour(binary);
+        drawContour(cameraFeed, handContour);
+        drawContour(cameraFeed, handtracking::getApproxConvexHull(handContour));
+        drawCircle(cameraFeed, handtracking::getCentroid(handContour));
 
         display(cameraFeed, binary);
         if (waitKey(30) == char(' '))
