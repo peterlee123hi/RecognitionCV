@@ -12,29 +12,32 @@ int c_upper[NSAMPLES][3];
 int averageBGR[3];
 
 vector<Point> POI;
+vector<Point> drawnLines;
 
-void drawCircle(Mat m, Point center) {
-    Scalar color(255, 0, 0);
+Scalar blue(255, 0, 0);
+Scalar green(0, 255, 0);
+Scalar red(0, 0, 255);
+
+void drawCircle(Mat m, Point center, Scalar color) {
     int radius = 6;
     circle(m, center, radius, color, 2);
 }
 
-void drawPOI(Mat m, Point center) {
-    Scalar color(0, 255, 0);
+void drawPOI(Mat m, Point center, Scalar color) {
     rectangle(m, Point(center.x - SIDE / 2, center.y - SIDE / 2), Point(center.x + SIDE / 2, center.y + SIDE / 2), color, 2);
 }
 
-void drawText(Mat& m, string text, Point center) {
+void drawText(Mat& m, string text, Point center, Scalar color) {
     int fontFace = FONT_HERSHEY_PLAIN;
     int baseline = 0;
     double scale = 1.6;
     Size textSize = getTextSize(text, fontFace, scale, 0, &baseline);
     Point corner(center.x - textSize.width / 2, center.y - textSize.height / 2);
-    putText(m, text, corner, fontFace, scale, Scalar(200, 0, 0), 2);
+    putText(m, text, corner, fontFace, scale, color, 2);
 }
 
 void drawTitle(Mat& m, string text) {
-    drawText(m, text, Point(m.cols / 2, m.rows / 10));
+    drawText(m, text, Point(m.cols / 2, m.rows / 10), green);
 }
 
 void calibrate(VideoCapture& camera) {
@@ -54,7 +57,7 @@ void calibrate(VideoCapture& camera) {
 
         drawTitle(cameraFeed, "Press space to calibrate.");
         for (int i = 0; i < POI.size(); i++) {
-            drawPOI(cameraFeed, POI[i]);
+            drawPOI(cameraFeed, POI[i], blue);
         }
 
         imshow("Camera", cameraFeed);
@@ -101,7 +104,7 @@ void average(VideoCapture& camera) {
         cvtColor(cameraFeed, cameraFeed, CV_BGR2HLS);
         for (int j = 0; j < NSAMPLES; j++) {
             getAverageColor(cameraFeed, POI[j], averageColor[j]);
-            drawPOI(cameraFeed, POI[j]);
+            drawPOI(cameraFeed, POI[j], green);
         }
         cvtColor(cameraFeed, cameraFeed, CV_HLS2BGR);
         drawTitle(cameraFeed, "Calculating average color...");
@@ -199,21 +202,63 @@ vector<Point> isolateContour(Mat& m) {
         approxPolyDP(Mat(contours[i]), contours[i], 3, true);
     }
 
-    int maxPoints = 0;
+    int leftX = 1 << 29;
     vector<Point> contour;
     for (int i = 0; i < contours.size(); i++) {
-        if (contours[i].size() > maxPoints) {
-            maxPoints = contours[i].size();
+        double ratio = contourArea(contours[i]) / binary.size().area();
+        int x = contours[i][0].x;
+        for (int j = 0; j < contours[i].size(); j++)
+            x = min(x, contours[i][j].x);
+        if (ratio > 0.03 && x < leftX) {
+            leftX = x;
             contour = contours[i];
         }
     }
+    if (contour.size() == 0)
+        contour = contours[0];
 
     return contour;
 }
 
 void drawContour(Mat& m, vector<Point> contour) {
     for (int i = 0; i < contour.size(); i++) {
-        line(m, contour[i], contour[(i + 1) % contour.size()], Scalar(255, 0, 0), 2);
+        line(m, contour[i], contour[(i + 1) % contour.size()], blue, 2);
+    }
+}
+
+Point getTop(vector<Point> contour) {
+    Point topPoint(0, 0);
+    int topY = 1 << 29;
+    for (int i = 0; i < contour.size(); i++) {
+        if (contour[i].y < topY) {
+            topY = contour[i].y;
+            topPoint = contour[i];
+        }
+    }
+    return topPoint;
+}
+
+bool isPenDown(vector<Point> contour) {
+    Point top = getTop(contour);
+    int distanceTolerance = 60;
+    for (int i = 0; i < contour.size(); i++) {
+        if (top != contour[i] && abs(top.y - contour[i].y) < distanceTolerance) {
+            return false;
+        }
+    }
+    
+    return top != Point(0, 0);
+}
+
+void addDrawPoint(Mat& cameraFeed, Point pen) {
+    drawCircle(cameraFeed, pen, red);
+    if (drawnLines.size() == 0) {
+        drawnLines.push_back(pen);
+    } else {
+        double distance = norm(pen - drawnLines.back());
+        bool inBounds = 5 < distance;
+        if (inBounds)
+            drawnLines.push_back(pen);
     }
 }
 
@@ -242,9 +287,29 @@ int main() {
         cvtColor(filtered, filtered, CV_HLS2BGR);
 
         vector<Point> handContour = isolateContour(binary);
+        vector<Point> approxConvexHull = handtracking::getApproxConvexHull(handContour);
         drawContour(cameraFeed, handContour);
-        drawContour(cameraFeed, handtracking::getApproxConvexHull(handContour));
-        drawCircle(cameraFeed, handtracking::getCentroid(handContour));
+        drawContour(cameraFeed, approxConvexHull);
+        drawCircle(cameraFeed, handtracking::getCentroid(handContour), blue);
+        if (isPenDown(approxConvexHull)) {
+            addDrawPoint(cameraFeed, getTop(approxConvexHull));
+            drawTitle(cameraFeed, "Pen is down.");
+        }
+        else {
+            drawTitle(cameraFeed, "Pen is NOT down.");
+            if (drawnLines.size() > 0 && drawnLines.back() != Point(0, 0)) {
+                drawnLines.push_back(Point(0, 0));
+            }
+        }
+
+        // Draw points!
+        for (int i = 0; i < ((int) drawnLines.size()) - 1; i++) {
+            Point a = drawnLines[i];
+            Point b = drawnLines[i + 1];
+            if (a != Point(0, 0) && b != Point(0, 0)) {
+                line(cameraFeed, a, b, blue, 2);
+            }
+        }
 
         display(cameraFeed, binary);
         if (waitKey(30) == char(' '))
