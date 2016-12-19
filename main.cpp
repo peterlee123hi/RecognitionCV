@@ -181,6 +181,36 @@ void display(Mat& cameraFeed, Mat& binary) {
     imshow("Camera", cameraFeed);
 }
 
+vector<Point> isolateContour(Mat& m) {
+    Mat binary;
+    m.copyTo(binary);
+    pyrUp(binary, binary);
+    vector< vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours(binary, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+    for (int i = 0; i < contours.size(); i++) {
+        approxPolyDP(Mat(contours[i]), contours[i], 3, true);
+    }
+
+    int maxPoints = 0;
+    vector<Point> contour;
+    for (int i = 0; i < contours.size(); i++) {
+        if (contours[i].size() > maxPoints) {
+            maxPoints = contours[i].size();
+            contour = contours[i];
+        }
+    }
+
+    return contour;
+}
+
+void drawContour(Mat& m, vector<Point> contour) {
+    for (int i = 0; i < contour.size(); i++) {
+        line(m, contour[i], contour[(i + 1) % contour.size()], Scalar(255, 0, 0), 2);
+    }
+}
+
 int main() {
     VideoCapture camera(0);
     if (!camera.isOpened()) {
@@ -204,6 +234,7 @@ int main() {
         cvtColor(filtered, filtered, CV_BGR2HLS);
         generateBinary(filtered, binary, binaryList);
         cvtColor(filtered, filtered, CV_HLS2BGR);
+        drawContour(cameraFeed, isolateContour(binary));
 
         display(cameraFeed, binary);
         if (waitKey(30) == char(' '))
