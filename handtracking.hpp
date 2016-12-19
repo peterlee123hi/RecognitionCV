@@ -12,4 +12,13 @@
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+using namespace cv;
+
+class handtracking {
+public:
+
+private:
+
+};
+
 #endif

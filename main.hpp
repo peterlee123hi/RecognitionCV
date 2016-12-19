@@ -8,12 +8,12 @@
 #include <vector>
 
 // OpenCV Libraries
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 // RecognitionCV Libraries
-#include "calibration.cpp"
 #include "handtracking.cpp"
 #include "faceRecognition.cpp"
 
