@@ -27,11 +27,12 @@ vector<Point> handtracking::getApproxConvexHull(vector<Point> contour) {
     vector<Point> hull;
     convexHull(contour, hull, 0, 1);
     int clusterDistance = 40;
-    return cluster(hull, clusterDistance);
+    return cluster(hull, 40);
 }
 
 // Private Functions
 vector<Point> handtracking::cluster(vector<Point> contour, int minDist) {
+    Point centroid = getCentroid(contour);
     vector<Point> clustered;
     int i = 0;
     while (i < contour.size()) {
@@ -48,17 +49,18 @@ vector<Point> handtracking::cluster(vector<Point> contour, int minDist) {
                 break;
             }
         }
-        clustered.push_back(median(cluster));
+
+        Point farPoint;
+        double maxDist = -1;
+        for (int i = 0; i < cluster.size(); i++) {
+            if (maxDist < distance(centroid, cluster[i])) {
+                farPoint = cluster[i];
+                maxDist = distance(centroid, cluster[i]);
+            }
+        }
+        clustered.push_back(farPoint);
     }
     return clustered;
-}
-
-Point handtracking::median(vector<Point> points) {
-    int median = points.size() / 2;
-    if (points.size() % 2 == 0 && points.size() > 0)
-        return points[median - 1];
-    else
-        return points[median];
 }
 
 double handtracking::distance(Point a, Point b) {
