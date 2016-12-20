@@ -8,7 +8,7 @@ const int NSAMPLES = 7;
 const int CIRCLE_RADIUS = 6;
 // Minimum size for contour to be detected.
 const double MIN_CONTOUR_RATIO = 0.04;
-const double MIN_DRAW_DISTANCE = 15;
+const double MIN_DRAW_DISTANCE = 10;
 
 int averageColor[NSAMPLES][3];
 int c_lower[NSAMPLES][3];
