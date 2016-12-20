@@ -322,6 +322,8 @@ int main() {
             Point b = drawnLines[i + 1];
             if (a != Point(0, 0) && b != Point(0, 0)) {
                 line(cameraFeed, a, b, red, 3);
+            } else if (a == Point(0, 0) && (drawnLines.size() == i + 2 || drawnLines[i + 2] == Point(0, 0))) {
+                drawCircle(cameraFeed, b, red);
             }
         }
 
