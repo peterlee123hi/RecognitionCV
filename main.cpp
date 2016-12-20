@@ -5,10 +5,10 @@ using namespace cv;
 
 const int SIDE = 8;
 const int NSAMPLES = 7;
-const int CIRCLE_RADIUS = 6;
+const int CIRCLE_RADIUS = 50;
 // Minimum size for contour to be detected.
 const double MIN_CONTOUR_RATIO = 0.04;
-const double MIN_DRAW_DISTANCE = 10;
+const double MIN_DRAW_DISTANCE = 20;
 
 int averageColor[NSAMPLES][3];
 int c_lower[NSAMPLES][3];
@@ -26,6 +26,10 @@ VideoWriter out;
 
 void drawCircle(Mat m, Point center, Scalar color) {
     circle(m, center, CIRCLE_RADIUS, color, 2);
+}
+
+void drawDot(Mat m, Point center, Scalar color) {
+    circle(m, center, 2, color, 3);
 }
 
 void drawPOI(Mat m, Point center, Scalar color) {
@@ -322,9 +326,9 @@ int main() {
             Point b = drawnLines[i + 1];
             if (a != Point(0, 0) && b != Point(0, 0)) {
                 line(cameraFeed, a, b, red, 3);
-            } else if (a == Point(0, 0) && (drawnLines.size() == i + 2 || drawnLines[i + 2] == Point(0, 0))) {
-                drawCircle(cameraFeed, b, red);
-            }
+            } /*else if (a == Point(0, 0) && (drawnLines.size() == i + 2 || drawnLines[i + 2] == Point(0, 0))) {
+                drawDot(cameraFeed, b, red);
+            }*/
         }
 
         display(cameraFeed, binary);

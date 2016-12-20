@@ -28,6 +28,7 @@ private:
     static vector<Point> cluster(vector<Point> contour, int minDist); 
     static Point median(vector<Point> points);
     static double distance(Point a, Point b);
+    static const int CLUSTER_DISTANCE = 50;
 };
 
 #endif

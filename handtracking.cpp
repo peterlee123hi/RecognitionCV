@@ -26,8 +26,7 @@ vector<Point> handtracking::getFingertips(vector<Point> contour) {
 vector<Point> handtracking::getApproxConvexHull(vector<Point> contour) {
     vector<Point> hull;
     convexHull(contour, hull, 0, 1);
-    int clusterDistance = 20;
-    return cluster(hull, clusterDistance);
+    return cluster(hull, handtracking::CLUSTER_DISTANCE);
 }
 
 // Private Functions
