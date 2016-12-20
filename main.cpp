@@ -5,6 +5,10 @@ using namespace cv;
 
 const int SIDE = 8;
 const int NSAMPLES = 7;
+const int CIRCLE_RADIUS = 6;
+// Minimum size for contour to be detected.
+const double MIN_CONTOUR_RATIO = 0.04;
+const double MIN_DRAW_DISTANCE = 15;
 
 int averageColor[NSAMPLES][3];
 int c_lower[NSAMPLES][3];
@@ -14,15 +18,14 @@ int averageBGR[3];
 vector<Point> POI;
 vector<Point> drawnLines;
 
-Scalar blue(255, 0, 0);
-Scalar green(0, 255, 0);
-Scalar red(0, 0, 255);
+Scalar blue(200, 0, 0);
+Scalar green(0, 200, 0);
+Scalar red(0, 0, 200);
 
 VideoWriter out;
 
 void drawCircle(Mat m, Point center, Scalar color) {
-    int radius = 6;
-    circle(m, center, radius, color, 2);
+    circle(m, center, CIRCLE_RADIUS, color, 2);
 }
 
 void drawPOI(Mat m, Point center, Scalar color) {
@@ -216,7 +219,7 @@ vector<Point> isolateContour(Mat& m) {
         int x = contours[i][0].x;
         for (int j = 0; j < contours[i].size(); j++)
             x = min(x, contours[i][j].x);
-        if (ratio > 0.03 && x < leftX) {
+        if (ratio > MIN_CONTOUR_RATIO && x < leftX) {
             leftX = x;
             contour = contours[i];
         }
@@ -247,9 +250,9 @@ Point getTop(vector<Point> contour) {
 
 bool isPenDown(vector<Point> contour) {
     Point top = getTop(contour);
-    int distanceTolerance = 60;
+    int topThreshold = 60;
     for (int i = 0; i < contour.size(); i++) {
-        if (top != contour[i] && abs(top.y - contour[i].y) < distanceTolerance) {
+        if (top != contour[i] && abs(top.y - contour[i].y) < topThreshold) {
             return false;
         }
     }
@@ -263,7 +266,7 @@ void addDrawPoint(Mat& cameraFeed, Point pen) {
         drawnLines.push_back(pen);
     } else {
         double distance = norm(pen - drawnLines.back());
-        bool inBounds = 5 < distance;
+        bool inBounds = MIN_DRAW_DISTANCE < distance;
         if (inBounds)
             drawnLines.push_back(pen);
     }
@@ -318,7 +321,7 @@ int main() {
             Point a = drawnLines[i];
             Point b = drawnLines[i + 1];
             if (a != Point(0, 0) && b != Point(0, 0)) {
-                line(cameraFeed, a, b, red, 2);
+                line(cameraFeed, a, b, red, 3);
             }
         }
 
