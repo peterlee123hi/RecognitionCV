@@ -17,16 +17,18 @@ using namespace cv;
 
 class handtracking {
 private:
+    static const float PI = 3.1415926535;
     static vector<Point> cluster(vector<Point> contour, int minDist); 
     static Point median(vector<Point> points);
     static double distance(Point a, Point b);
+    static float angle(Point v1, Point v2);
 
 public:
     static int numberOfFingers(vector<Point> contour);
     static bool isHand(vector<Point> contour);
     static Point getCentroid(vector<Point> contour);
-    static vector<Point> getDefects(vector<Point> contour, int minDist);
-    static vector<Point> getFingertips(vector<Point> contour);
+    static vector<Point> getDefects(vector<Point> contour);
+    static vector<Point> getFingertips(vector<Point> contour, vector<Point> approxHull);
     static vector<Point> getApproxConvexHull(vector<Point> contour, int clusterDistance);
 };
 

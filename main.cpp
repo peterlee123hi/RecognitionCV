@@ -329,6 +329,47 @@ void executeDrawDemo(VideoCapture camera) {
     }
 }
 
+void executeFaceRecognitionDemo(VideoCapture& camera) {
+    while (true) {
+        Mat cameraFeed;
+        Mat filtered;
+        Mat binary;
+        vector<Mat> binaryList;
+        camera.read(cameraFeed);
+        Mat rawCameraFeed;
+        flip(cameraFeed, cameraFeed, 1);
+        cameraFeed.copyTo(rawCameraFeed);
+
+        pyrDown(cameraFeed, filtered);
+        blur(filtered, filtered, Size(3, 3));
+        cvtColor(filtered, filtered, CV_BGR2HLS);
+        generateBinary(filtered, binary, binaryList);
+        cvtColor(filtered, filtered, CV_HLS2BGR);
+
+        vector<Point> handContour = isolateContour(binary);
+        vector<Point> approxConvexHull = handtracking::getApproxConvexHull(handContour, 30);
+        drawContour(cameraFeed, handContour);
+        drawContour(cameraFeed, approxConvexHull);
+        drawCircle(cameraFeed, handtracking::getCentroid(handContour), blue, 6);
+        vector<Point> defects = handtracking::getDefects(handContour);
+        for (int i = 0; i < defects.size(); i++) {
+            drawCircle(cameraFeed, defects[i], green, 6);
+        }
+        vector<Point> tips = handtracking::getFingertips(handContour, approxConvexHull);
+        for (int i = 0; i < tips.size(); i++) {
+            drawCircle(cameraFeed, tips[i], red, 6);
+        }
+
+        stringstream ss;
+        ss << "Fingers: " << tips.size();
+        drawTitle(cameraFeed, ss.str());
+
+        display(cameraFeed, rawCameraFeed, binary);
+        if (waitKey(30) == char(' '))
+            break;
+    }
+}
+
 int main() {
     VideoCapture camera(0);
     if (!camera.isOpened()) {
@@ -344,7 +385,8 @@ int main() {
     average(camera);
     initTrackbars();
 
-    executeDrawDemo(camera);
+    // executeDrawDemo(camera);
+    executeFaceRecognitionDemo(camera);
 
     out.release();
     camera.release();
