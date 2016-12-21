@@ -5,10 +5,9 @@ using namespace cv;
 
 const int SIDE = 8;
 const int NSAMPLES = 7;
-const int CIRCLE_RADIUS = 50;
 // Minimum size for contour to be detected.
-const double MIN_CONTOUR_RATIO = 0.04;
-const double MIN_DRAW_DISTANCE = 20;
+const double MIN_CONTOUR_RATIO = 0.02;
+const double MIN_DRAW_DISTANCE = 15;
 
 int averageColor[NSAMPLES][3];
 int c_lower[NSAMPLES][3];
@@ -23,9 +22,10 @@ Scalar green(0, 200, 0);
 Scalar red(0, 0, 200);
 
 VideoWriter out;
+VideoWriter rawOut;
 
-void drawCircle(Mat m, Point center, Scalar color) {
-    circle(m, center, CIRCLE_RADIUS, color, 2);
+void drawCircle(Mat m, Point center, Scalar color, int radius) {
+    circle(m, center, radius, color, 2);
 }
 
 void drawDot(Mat m, Point center, Scalar color) {
@@ -70,6 +70,7 @@ void calibrate(VideoCapture& camera) {
         }
 
         out << cameraFeed;
+        rawOut << cameraFeed;
         imshow("Camera", cameraFeed);
         if (waitKey(30) == char(' '))
             break;
@@ -120,6 +121,7 @@ void average(VideoCapture& camera) {
         drawTitle(cameraFeed, "Calculating average color...");
 
         out << cameraFeed;
+        rawOut << cameraFeed;
         imshow("Camera", cameraFeed);
         if (waitKey(30) >= 0)
             break;
@@ -189,7 +191,7 @@ void generateBinary(Mat& filtered, Mat& binary, vector<Mat>& binaryList) {
     medianBlur(binary, binary, 7);
 }
 
-void display(Mat& cameraFeed, Mat& binary) {
+void display(Mat& cameraFeed, Mat& raw, Mat& binary) {
     pyrDown(binary, binary);
     Rect r(Point(3 * cameraFeed.cols / 4, 0), binary.size());
     vector<Mat> channels;
@@ -199,8 +201,10 @@ void display(Mat& cameraFeed, Mat& binary) {
     }
     merge(channels, result);
     result.copyTo(cameraFeed(r));
+    result.copyTo(raw(r));
 
     out << cameraFeed;
+    rawOut << raw;
     imshow("Camera", cameraFeed);
 }
 
@@ -265,7 +269,7 @@ bool isPenDown(vector<Point> contour) {
 }
 
 void addDrawPoint(Mat& cameraFeed, Point pen) {
-    drawCircle(cameraFeed, pen, red);
+    drawCircle(cameraFeed, pen, red, 60);
     if (drawnLines.size() == 0) {
         drawnLines.push_back(pen);
     } else {
@@ -276,27 +280,16 @@ void addDrawPoint(Mat& cameraFeed, Point pen) {
     }
 }
 
-int main() {
-    VideoCapture camera(0);
-    if (!camera.isOpened()) {
-        cout << "Cannot open camera.";
-    }
-
-    Mat frame;
-    camera >> frame;
-    out.open("demoTest.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
-
-    calibrate(camera);
-    average(camera);
-    initTrackbars();
-
+void executeDrawDemo(VideoCapture camera) {
     while (true) {
         Mat cameraFeed;
         Mat filtered;
         Mat binary;
         vector<Mat> binaryList;
         camera.read(cameraFeed);
+        Mat rawCameraFeed;
         flip(cameraFeed, cameraFeed, 1);
+        cameraFeed.copyTo(rawCameraFeed);
 
         pyrDown(cameraFeed, filtered);
         blur(filtered, filtered, Size(3, 3));
@@ -308,7 +301,7 @@ int main() {
         vector<Point> approxConvexHull = handtracking::getApproxConvexHull(handContour);
         drawContour(cameraFeed, handContour);
         drawContour(cameraFeed, approxConvexHull);
-        drawCircle(cameraFeed, handtracking::getCentroid(handContour), blue);
+        drawCircle(cameraFeed, handtracking::getCentroid(handContour), blue, 6);
         if (isPenDown(approxConvexHull)) {
             addDrawPoint(cameraFeed, getTop(approxConvexHull));
             drawTitle(cameraFeed, "Pen is down.");
@@ -326,15 +319,32 @@ int main() {
             Point b = drawnLines[i + 1];
             if (a != Point(0, 0) && b != Point(0, 0)) {
                 line(cameraFeed, a, b, red, 3);
-            } /*else if (a == Point(0, 0) && (drawnLines.size() == i + 2 || drawnLines[i + 2] == Point(0, 0))) {
-                drawDot(cameraFeed, b, red);
-            }*/
+                line(rawCameraFeed, a, b, red, 3);
+            }
         }
 
-        display(cameraFeed, binary);
+        display(cameraFeed, rawCameraFeed, binary);
         if (waitKey(30) == char(' '))
             break;
     }
+}
+
+int main() {
+    VideoCapture camera(0);
+    if (!camera.isOpened()) {
+        cout << "Cannot open camera.";
+    }
+
+    Mat frame;
+    camera >> frame;
+    out.open("demoTest.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
+    rawOut.open("demoPure.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
+
+    calibrate(camera);
+    average(camera);
+    initTrackbars();
+
+    executeDrawDemo(camera);
 
     out.release();
     camera.release();
