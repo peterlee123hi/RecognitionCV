@@ -298,7 +298,7 @@ void executeDrawDemo(VideoCapture camera) {
         cvtColor(filtered, filtered, CV_HLS2BGR);
 
         vector<Point> handContour = isolateContour(binary);
-        vector<Point> approxConvexHull = handtracking::getApproxConvexHull(handContour);
+        vector<Point> approxConvexHull = handtracking::getApproxConvexHull(handContour, 60);
         drawContour(cameraFeed, handContour);
         drawContour(cameraFeed, approxConvexHull);
         drawCircle(cameraFeed, handtracking::getCentroid(handContour), blue, 6);

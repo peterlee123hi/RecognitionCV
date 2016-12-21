@@ -16,19 +16,18 @@ using namespace std;
 using namespace cv;
 
 class handtracking {
+private:
+    static vector<Point> cluster(vector<Point> contour, int minDist); 
+    static Point median(vector<Point> points);
+    static double distance(Point a, Point b);
+
 public:
     static int numberOfFingers(vector<Point> contour);
     static bool isHand(vector<Point> contour);
     static Point getCentroid(vector<Point> contour);
     static vector<Point> getDefects(vector<Point> contour, int minDist);
     static vector<Point> getFingertips(vector<Point> contour);
-    static vector<Point> getApproxConvexHull(vector<Point> contour);
-
-private:
-    static vector<Point> cluster(vector<Point> contour, int minDist); 
-    static Point median(vector<Point> points);
-    static double distance(Point a, Point b);
-    static const int CLUSTER_DISTANCE = 60;
+    static vector<Point> getApproxConvexHull(vector<Point> contour, int clusterDistance);
 };
 
 #endif
