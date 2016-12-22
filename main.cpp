@@ -346,6 +346,7 @@ void executeFaceRecognitionDemo(VideoCapture& camera) {
         generateBinary(filtered, binary, binaryList);
         cvtColor(filtered, filtered, CV_HLS2BGR);
 
+        // Draw hand data
         vector<Point> handContour = isolateContour(binary);
         vector<Point> approxConvexHull = handtracking::getApproxConvexHull(handContour, 30);
         drawContour(cameraFeed, handContour);
@@ -360,9 +361,42 @@ void executeFaceRecognitionDemo(VideoCapture& camera) {
             drawCircle(cameraFeed, tips[i], red, 6);
         }
 
+        // Draw face detection
+        string face_cascade_path = "/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml";
+        vector<Rect> faces = facerecognition::detectFaces(cameraFeed, face_cascade_path);
+        for (int i = 0; i < faces.size(); i++) {
+            rectangle(cameraFeed, faces[i], green, 4);
+        }
+
         stringstream ss;
         ss << "Fingers: " << tips.size();
         drawTitle(cameraFeed, ss.str());
+
+        // Draw glasses
+        if (0 < faces.size() && 1 <= tips.size() && tips.size() <= 3) {
+            ss.str("");
+            ss << "./glasses" << tips.size() << ".png";
+            Mat glasses = imread(ss.str(), IMREAD_UNCHANGED);
+            Rect face = faces[0];
+            double aspectRatio = glasses.cols / glasses.rows;
+            Size newSize(face.width, (int) (face.width / aspectRatio));
+            resize(glasses, glasses, newSize);
+            int offset = 20;
+            if (tips.size() == 2) {
+                offset = -10;
+            }
+            for (int y = 0; y < glasses.rows; y++) {
+                for (int x = 0; x < glasses.cols; x++) {
+                    Vec4b pixel = glasses.at<Vec4b>(y, x);
+                    if (pixel[3] > 0) {
+                        Vec3b gPixel(pixel[0], pixel[1], pixel[2]);
+                        int xCoord = face.x + x;
+                        int yCoord = face.y + y;
+                        cameraFeed.at<Vec3b>(Point(xCoord, yCoord + offset)) = gPixel;
+                    }
+                }
+            }
+        }
 
         display(cameraFeed, rawCameraFeed, binary);
         if (waitKey(30) == char(' '))
