@@ -21,6 +21,7 @@ Scalar blue(200, 0, 0);
 Scalar green(0, 200, 0);
 Scalar red(0, 0, 200);
 
+bool generateVideo = false;
 VideoWriter out;
 VideoWriter rawOut;
 
@@ -69,8 +70,11 @@ void calibrate(VideoCapture& camera) {
             drawPOI(cameraFeed, POI[i], blue);
         }
 
-        out << cameraFeed;
-        rawOut << cameraFeed;
+        if (generateVideo) {
+            out << cameraFeed;
+            rawOut << cameraFeed;
+        }
+
         imshow("Camera", cameraFeed);
         if (waitKey(30) == char(' '))
             break;
@@ -120,8 +124,11 @@ void average(VideoCapture& camera) {
         cvtColor(cameraFeed, cameraFeed, CV_HLS2BGR);
         drawTitle(cameraFeed, "Calculating average color...");
 
-        out << cameraFeed;
-        rawOut << cameraFeed;
+        if (generateVideo) {
+            out << cameraFeed;
+            rawOut << cameraFeed;
+        }
+
         imshow("Camera", cameraFeed);
         if (waitKey(30) >= 0)
             break;
@@ -203,8 +210,11 @@ void display(Mat& cameraFeed, Mat& raw, Mat& binary) {
     result.copyTo(cameraFeed(r));
     result.copyTo(raw(r));
 
-    out << cameraFeed;
-    rawOut << raw;
+    if (generateVideo) {
+        out << cameraFeed;
+        rawOut << raw;
+    }
+
     imshow("Camera", cameraFeed);
 }
 
@@ -412,17 +422,24 @@ int main() {
 
     Mat frame;
     camera >> frame;
-    out.open("demoTest.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
-    rawOut.open("demoPure.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
+
+    if (generateVideo) {
+        out.open("demoTest.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
+        rawOut.open("demoPure.avi", CV_FOURCC('M', 'J', 'P', 'G'), 15, frame.size(), true);
+    }
 
     calibrate(camera);
     average(camera);
     initTrackbars();
 
-    // executeDrawDemo(camera);
-    executeFaceRecognitionDemo(camera);
+    executeDrawDemo(camera);
+    // executeFaceRecognitionDemo(camera);
 
-    out.release();
+    if (generateVideo) {
+        out.release();
+        rawOut.release();
+    }
+
     camera.release();
     destroyAllWindows();
     return 0;
